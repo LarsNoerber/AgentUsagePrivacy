@@ -1,32 +1,82 @@
 import argparse
 import html
 import json
+import re
 import shutil
+import unicodedata
+import datetime
 from pathlib import Path
 
 
 def render_paragraphs(text: str) -> str:
-    email = "codlNg@gmx.de"
-    complaint = "https://datenschutz.hessen.de/service/beschwerde-uebermitteln"
+    pattern = re.compile(r"https?://[^\s<>]+|[A-Za-z0-9_.+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}")
     blocks = []
     for paragraph in text.split("\n\n"):
-        escaped = html.escape(paragraph.strip())
-        escaped = escaped.replace(email, f'<a href="mailto:{email}">{email}</a>')
-        escaped = escaped.replace(complaint, f'<a href="{complaint}">{html.escape(complaint)}</a>')
-        escaped = escaped.replace(
-            "https://openrouter.ai/api/v1/key",
-            '<a href="https://openrouter.ai/api/v1/key">https://openrouter.ai/api/v1/key</a>',
-        )
-        if escaped:
-            blocks.append(f"<p>{escaped}</p>")
+        pieces = []
+        cursor = 0
+        for match in pattern.finditer(paragraph):
+            pieces.append(html.escape(paragraph[cursor:match.start()]))
+            token = match.group().rstrip(".,;)")
+            suffix = match.group()[len(token):]
+            href = token if token.startswith("https://") or token.startswith("http://") else "mailto:" + token
+            pieces.append(f'<a href="{html.escape(href, quote=True)}">{html.escape(token)}</a>{html.escape(suffix)}')
+            cursor = match.end()
+        pieces.append(html.escape(paragraph[cursor:]))
+        if paragraph.strip():
+            blocks.append("<p>" + "".join(pieces) + "</p>")
     return "\n".join(blocks)
+
+
+def slug(value: str) -> str:
+    normalized = unicodedata.normalize("NFKD", value).encode("ascii", "ignore").decode().lower()
+    return re.sub(r"[^a-z0-9]+", "-", normalized).strip("-") or "section"
+
+
+def privacy_sections(data: dict) -> list[dict]:
+    sections = data.get("privacySections", [])
+    if sections:
+        return sections
+    return [{"title": "Privacy policy", "body": data.get("privacy", "")}]
+
+
+def policy_for_publication(policy: dict) -> dict:
+    published = json.loads(json.dumps(policy))
+    for language in ("de", "en"):
+        data = published[language]
+        data["privacy"] = "\n\n".join(
+            f"{section['title']}\n{section['body']}" for section in privacy_sections(data)
+        )
+    return published
+
+
+def validate_policy(policy: dict) -> dict:
+    if policy.get("schema") != 1 or not isinstance(policy.get("policyRevision"), int) or policy["policyRevision"] < 1:
+        raise ValueError("Policy needs schema 1 and a positive policyRevision")
+    datetime.date.fromisoformat(policy["updatedAt"])
+    for language in ("de", "en"):
+        data = policy[language]
+        sections = privacy_sections(data)
+        if not sections or any(not isinstance(s.get("title"), str) or not s["title"].strip()
+                               or not isinstance(s.get("body"), str) or not s["body"].strip() for s in sections):
+            raise ValueError("Every policy section needs a title and body")
+        anchors = [slug(section["title"]) for section in sections]
+        if len(anchors) != len(set(anchors)):
+            raise ValueError("Policy section anchors must be unique")
+    published = policy_for_publication(policy)
+    for language in ("de", "en"):
+        for key in ("imprint", "privacy", "rights"):
+            body = published[language][key]
+            if not isinstance(body, str) or not body.strip() or len(body) > 24000:
+                raise ValueError(f"{language}/{key} exceeds the Android policy format")
+    if len((json.dumps(published, ensure_ascii=False, indent=2) + "\n").encode("utf-8")) > 131072:
+        raise ValueError("Published JSON exceeds the Android download limit")
+    return published
 
 
 def render_page(policy: dict, language: str, base: str) -> str:
     de = language == "de"
     title = "Datenschutzerklärung und Impressum" if de else "Privacy policy and publisher information"
     imprint = "Impressum" if de else "Publisher information"
-    privacy = "Datenschutzerklärung" if de else "Privacy policy"
     rights = "Deine Rechte" if de else "Your rights"
     updated = "Stand" if de else "Last updated"
     switch_de = "Deutsch" if de else "German"
@@ -37,6 +87,18 @@ def render_page(policy: dict, language: str, base: str) -> str:
         else "AgentMeter is an independent app. Provider names identify supported services."
     )
     data = policy[language]
+    content_nav = [
+        ("imprint", imprint),
+        *((f"privacy-{slug(section['title'])}", section["title"]) for section in privacy_sections(data)),
+        ("rights", rights),
+    ]
+    toc = "\n".join(f'<a href="#{anchor}">{html.escape(label)}</a>' for anchor, label in content_nav)
+    privacy_html = "\n".join(
+        f'<section aria-labelledby="privacy-{slug(section["title"])}">'
+        f'<h2 id="privacy-{slug(section["title"])}">{html.escape(section["title"])}</h2>'
+        f'{render_paragraphs(section["body"])}</section>'
+        for section in privacy_sections(data)
+    )
     return f'''<!doctype html>
 <html lang="{language}">
 <head>
@@ -54,6 +116,9 @@ def render_page(policy: dict, language: str, base: str) -> str:
     footer {{ color: #a9bad0; text-align: center; padding: 1.6rem 0; font-size: .9rem; }}
     nav {{ display: flex; flex-wrap: wrap; gap: .6rem; margin: 1.4rem 0 2rem; }}
     nav a {{ display: inline-block; padding: .4rem .85rem; border: 1px solid #46607b; border-radius: 999px; background: #112236; text-decoration: none; }}
+    .contents {{ margin: 0 0 2rem; padding: 1rem; border: 1px solid #ffffff18; border-radius: .8rem; background: #101c2bee; }}
+    .contents strong {{ display: block; margin-bottom: .6rem; }}
+    .contents a {{ padding: .2rem .4rem; font-size: .92rem; }}
     .brand {{ display: flex; align-items: center; gap: .75rem; font-size: 1.1rem; font-weight: 750; letter-spacing: .02em; }}
     .brand img {{ width: 2.8rem; height: 2.8rem; border: 1px solid #ffffff22; border-radius: .8rem; box-shadow: 0 8px 24px #0005; }}
     .eyebrow {{ color: #6bd8ff; text-transform: uppercase; letter-spacing: .14em; font-size: .76rem; font-weight: 700; margin-top: 2rem; }}
@@ -82,8 +147,9 @@ def render_page(policy: dict, language: str, base: str) -> str:
       <p class="eyebrow">AgentMeter · Legal</p>
       <p class="updated">{updated}: {html.escape(policy['updatedAt'])}</p>
     </header>
+    <nav class="contents" aria-label="{('Inhalt' if de else 'Contents')}"><strong>{('Auf dieser Seite' if de else 'On this page')}</strong>{toc}</nav>
     <section aria-labelledby="imprint"><h2 id="imprint">{imprint}</h2>{render_paragraphs(data['imprint'])}</section>
-    <section aria-labelledby="privacy"><h2 id="privacy">{privacy}</h2>{render_paragraphs(data['privacy'])}</section>
+    {privacy_html}
     <section aria-labelledby="rights"><h2 id="rights">{rights}</h2>{render_paragraphs(data['rights'])}</section>
     <footer><p>{footer}</p></footer>
   </main>
@@ -99,11 +165,10 @@ def main() -> None:
     source = Path(__file__).parent
     output = Path(args.output_dir)
     policy = json.loads((source / "policy.json").read_text(encoding="utf-8"))
-    if policy.get("schema") != 1 or not policy.get("updatedAt"):
-        raise SystemExit("Unsupported or incomplete privacy policy schema")
+    published = validate_policy(policy)
     output.mkdir(parents=True, exist_ok=True)
     (output / "assets").mkdir(exist_ok=True)
-    (output / "policy.json").write_text(json.dumps(policy, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    (output / "policy.json").write_text(json.dumps(published, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     shutil.copy2(source / "assets" / "agentmeter.png", output / "assets" / "agentmeter.png")
     (output / "de").mkdir(exist_ok=True)
     (output / "en").mkdir(exist_ok=True)

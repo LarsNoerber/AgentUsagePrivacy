@@ -10,3 +10,16 @@ needed for text updates.
 
 The public site contains the publisher details required for the app listing. Keep unrelated project files and
 credentials out of this repository.
+
+Policy revision 2 describes the selected-provider network requests (including before sign-in), provider/identity
+credentials, OpenRouter, GeckoView security connections, GitHub Pages logging, local history and launcher widgets.
+The text does not claim that the absence of an AgentMeter server means no data collection. Native engine telemetry
+is disabled by the app; provider web pages can have their own processing.
+
+Update `policyRevision` when the bundled notice changes materially. The generated public JSON includes both
+`privacySections` and the flat `privacy` field read by Android. The site build rejects notices that exceed the
+Android schema, length or download limits. In the Android repository, run `python scripts/sync_privacy.py` to
+regenerate the exact same bilingual strings, Markdown documents and Android verification fixture. Check all
+copies with `python scripts/sync_privacy.py --check`.
+
+Do not publish an address that the publisher has identified as incorrect; obtain its exact replacement first.
