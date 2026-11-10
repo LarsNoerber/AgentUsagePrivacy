@@ -11,7 +11,7 @@ needed for text updates.
 The public site contains the publisher details required for the app listing. Keep unrelated project files and
 credentials out of this repository.
 
-Policy revision 8 describes provider and identity requests, persistent GeckoView storage with tracking protection disabled, encrypted API keys for OpenRouter/DeepSeek/Z.ai/Mistral, Claude and Groq readings, MFA session retention, local language preferences, history exports, launcher widgets and optional local notification alerts. Native engine telemetry is disabled; provider pages retain their own processing. No AgentMeter application server does not mean no personal data are transmitted.
+Policy revision 9 additionally describes Android autofill via the chosen device password manager, the local previous-connection flag, and deletion of password-manager entries. It also describes provider and identity requests, persistent GeckoView storage with tracking protection disabled, encrypted API keys for OpenRouter/DeepSeek/Z.ai/Mistral, Claude and Groq readings, MFA session retention, local language preferences, history exports, launcher widgets and optional local notification alerts. Native engine telemetry is disabled; provider pages retain their own processing. No AgentMeter application server does not mean no personal data are transmitted.
 
 Update `policyRevision` when the bundled notice changes materially. The generated public JSON includes both
 `privacySections` and the flat `privacy` field read by Android. The site build rejects notices that exceed the
