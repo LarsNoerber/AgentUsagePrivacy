@@ -11,10 +11,7 @@ needed for text updates.
 The public site contains the publisher details required for the app listing. Keep unrelated project files and
 credentials out of this repository.
 
-Policy revision 3 describes the selected-provider network requests (including before sign-in), provider/identity
-credentials, OpenRouter, GeckoView security connections, GitHub Pages logging, local history and launcher widgets.
-The text does not claim that the absence of an AgentMeter server means no data collection. Native engine telemetry
-is disabled by the app; provider web pages can have their own processing.
+Policy revision 7 describes provider and identity requests, persistent GeckoView storage with tracking protection disabled, encrypted API keys for OpenRouter/DeepSeek/Z.ai/Mistral, Claude and Groq readings, MFA session retention, local language preferences, history exports and launcher widgets. Native engine telemetry is disabled; provider pages retain their own processing. No AgentMeter application server does not mean no personal data are transmitted.
 
 Update `policyRevision` when the bundled notice changes materially. The generated public JSON includes both
 `privacySections` and the flat `privacy` field read by Android. The site build rejects notices that exceed the
