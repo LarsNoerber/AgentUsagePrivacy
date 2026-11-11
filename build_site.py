@@ -66,7 +66,7 @@ def validate_policy(policy: dict) -> dict:
     for language in ("de", "en"):
         for key in ("imprint", "privacy", "rights"):
             body = published[language][key]
-            if not isinstance(body, str) or not body.strip() or len(body) > 24000:
+            if not isinstance(body, str) or not body.strip() or len(body) > 30000:
                 raise ValueError(f"{language}/{key} exceeds the Android policy format")
     if len((json.dumps(published, ensure_ascii=False, indent=2) + "\n").encode("utf-8")) > 131072:
         raise ValueError("Published JSON exceeds the Android download limit")
