@@ -79,6 +79,8 @@ def render_page(policy: dict, language: str, base: str) -> str:
     imprint = "Impressum" if de else "Publisher information"
     rights = "Deine Rechte" if de else "Your rights"
     updated = "Stand" if de else "Last updated"
+    imprint_link = "Impressum" if de else "Publisher information"
+    privacy_link = "Datenschutz" if de else "Privacy"
     switch_de = "Deutsch" if de else "German"
     switch_en = "Englisch" if de else "English"
     footer = (
@@ -87,6 +89,7 @@ def render_page(policy: dict, language: str, base: str) -> str:
         else "AgentMeter is an independent app. Provider names identify supported services."
     )
     data = policy[language]
+    privacy_anchor = f"privacy-{slug(privacy_sections(data)[0]['title'])}"
     content_nav = [
         ("imprint", imprint),
         *((f"privacy-{slug(section['title'])}", section["title"]) for section in privacy_sections(data)),
@@ -114,6 +117,8 @@ def render_page(policy: dict, language: str, base: str) -> str:
     main {{ max-width: 56rem; margin: 0 auto; padding: 2.25rem 1.2rem 4rem; }}
     header {{ padding: 1.5rem 0 2rem; }}
     footer {{ color: #a9bad0; text-align: center; padding: 1.6rem 0; font-size: .9rem; }}
+    .legal-links {{ display: flex; justify-content: center; gap: .35rem; margin: 3px 0 0; font-size: .82rem; }}
+    .legal-links a {{ color: #78d8ff; padding: 0; border: 0; border-radius: 0; background: transparent; text-decoration: underline; }}
     nav {{ display: flex; flex-wrap: wrap; gap: .6rem; margin: 1.4rem 0 2rem; }}
     nav a {{ display: inline-block; padding: .4rem .85rem; border: 1px solid #46607b; border-radius: 999px; background: #112236; text-decoration: none; }}
     .contents {{ margin: 0 0 2rem; padding: 1rem; border: 1px solid #ffffff18; border-radius: .8rem; background: #101c2bee; }}
@@ -151,7 +156,13 @@ def render_page(policy: dict, language: str, base: str) -> str:
     <section aria-labelledby="imprint"><h2 id="imprint">{imprint}</h2>{render_paragraphs(data['imprint'])}</section>
     {privacy_html}
     <section aria-labelledby="rights"><h2 id="rights">{rights}</h2>{render_paragraphs(data['rights'])}</section>
-    <footer><p>{footer}</p></footer>
+    <footer>
+      <p>{footer}</p>
+      <nav class="legal-links" aria-label="{('Rechtliche Links' if de else 'Legal links')}">
+        <a href="#imprint">{imprint_link}</a><span aria-hidden="true">·</span>
+        <a href="#{privacy_anchor}">{privacy_link}</a>
+      </nav>
+    </footer>
   </main>
 </body>
 </html>
