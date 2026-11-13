@@ -108,6 +108,7 @@ def render_page(policy: dict, language: str, base: str) -> str:
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="index,follow">
+  <link rel="icon" type="image/png" href="{base}assets/agentmeter.png">
   <title>AgentMeter — {title}</title>
   <meta name="description" content="AgentMeter privacy policy and publisher information">
   <style>
@@ -186,7 +187,7 @@ def main() -> None:
     (output / "de" / "index.html").write_text(render_page(policy, "de", "../"), encoding="utf-8")
     (output / "en" / "index.html").write_text(render_page(policy, "en", "../"), encoding="utf-8")
     (output / "index.html").write_text('''<!doctype html>
-<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" type="image/png" href="assets/agentmeter.png">
 <title>AgentMeter — Privacy policy</title><style>:root{font:1.05rem/1.6 system-ui;background:#07121f;color:#eaf3ff}body{max-width:48rem;margin:0 auto;padding:12vh 1.2rem;background:radial-gradient(ellipse at top left,#183653,transparent 60%)}.brand{display:flex;align-items:center;gap:.8rem;font-size:1.2rem;font-weight:700}.brand img{width:3rem;border-radius:.8rem}h1{font-size:clamp(2rem,7vw,3rem);line-height:1.1}section{margin-top:2rem;padding:1.5rem;border:1px solid #ffffff20;border-radius:1.2rem;background:#14263a}a{display:inline-block;margin:.5rem .5rem 0 0;padding:.55rem 1rem;border:1px solid #46607b;border-radius:999px;color:#78d8ff;text-decoration:none}</style></head>
 <body><main><div class="brand"><img src="assets/agentmeter.png" alt=""><span>AgentMeter</span></div><section><h1>Datenschutz<br>Privacy</h1><p>Sprache wählen / Choose a language:</p><a href="de/" lang="de">Deutsch</a><a href="en/" lang="en">English</a></section></main></body></html>''', encoding="utf-8")
 
